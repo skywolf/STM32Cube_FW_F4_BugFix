@@ -994,7 +994,7 @@ void HAL_RCC_DisableCSS(void)
   */
 __weak uint32_t HAL_RCC_GetSysClockFreq(void)
 {
-  uint32_t pllm = 0, pllvco = 0, pllp = 0;
+  uint32_t pllm = 0, plln=0, pllvco = 0, pllp = 0;
   uint32_t sysclockfreq = 0;
 
   /* Get SYSCLK source -------------------------------------------------------*/
@@ -1015,17 +1015,19 @@ __weak uint32_t HAL_RCC_GetSysClockFreq(void)
       /* PLL_VCO = (HSE_VALUE or HSI_VALUE / PLLM) * PLLN
       SYSCLK = PLL_VCO / PLLP */
       pllm = RCC->PLLCFGR & RCC_PLLCFGR_PLLM;
+	  plln = (RCC->PLLCFGR & RCC_PLLCFGR_PLLN) >> POSITION_VAL(RCC_PLLCFGR_PLLN);
+	  pllp = (((RCC->PLLCFGR & RCC_PLLCFGR_PLLP) >> POSITION_VAL(RCC_PLLCFGR_PLLP)) + 1 ) *2;
       if(__HAL_RCC_GET_PLL_OSCSOURCE() != RCC_PLLSOURCE_HSI)
       {
         /* HSE used as PLL clock source */
-        pllvco = ((HSE_VALUE / pllm) * ((RCC->PLLCFGR & RCC_PLLCFGR_PLLN) >> POSITION_VAL(RCC_PLLCFGR_PLLN)));
+        pllvco = ((uint64_t)HSE_VALUE * plln / pllm);
       }
       else
       {
         /* HSI used as PLL clock source */
-        pllvco = ((HSI_VALUE / pllm) * ((RCC->PLLCFGR & RCC_PLLCFGR_PLLN) >> POSITION_VAL(RCC_PLLCFGR_PLLN)));    
+        pllvco = ((uint64_t)HSI_VALUE * plln / pllm);    
       }
-      pllp = ((((RCC->PLLCFGR & RCC_PLLCFGR_PLLP) >> POSITION_VAL(RCC_PLLCFGR_PLLP)) + 1 ) *2);
+      
       
       sysclockfreq = pllvco/pllp;
       break;
