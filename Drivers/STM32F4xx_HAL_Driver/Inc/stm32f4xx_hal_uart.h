@@ -682,15 +682,16 @@ uint32_t              HAL_UART_GetError(UART_HandleTypeDef *huart);
 #define IS_UART_BAUDRATE(BAUDRATE) ((BAUDRATE) < 10500001)
 #define IS_UART_ADDRESS(ADDRESS) ((ADDRESS) <= 0xF)
 
-#define UART_DIV_SAMPLING16(_PCLK_, _BAUD_)            (((_PCLK_)*25)/(4*(_BAUD_)))
-#define UART_DIVMANT_SAMPLING16(_PCLK_, _BAUD_)        (UART_DIV_SAMPLING16((_PCLK_), (_BAUD_))/100)
-#define UART_DIVFRAQ_SAMPLING16(_PCLK_, _BAUD_)        (((UART_DIV_SAMPLING16((_PCLK_), (_BAUD_)) - (UART_DIVMANT_SAMPLING16((_PCLK_), (_BAUD_)) * 100)) * 16 + 50) / 100)
-#define UART_BRR_SAMPLING16(_PCLK_, _BAUD_)            ((UART_DIVMANT_SAMPLING16((_PCLK_), (_BAUD_)) << 4)|(UART_DIVFRAQ_SAMPLING16((_PCLK_), (_BAUD_)) & 0x0F))
+#define UART_BRR_SAMPLING16(_PCLK_, _BAUD_) 	(((_PCLK_)+(_BAUD_)/2)/_BAUD_)
 
-#define UART_DIV_SAMPLING8(_PCLK_, _BAUD_)             (((_PCLK_)*25)/(2*(_BAUD_)))
-#define UART_DIVMANT_SAMPLING8(_PCLK_, _BAUD_)         (UART_DIV_SAMPLING8((_PCLK_), (_BAUD_))/100)
-#define UART_DIVFRAQ_SAMPLING8(_PCLK_, _BAUD_)         (((UART_DIV_SAMPLING8((_PCLK_), (_BAUD_)) - (UART_DIVMANT_SAMPLING8((_PCLK_), (_BAUD_)) * 100)) * 16 + 50) / 100)
-#define UART_BRR_SAMPLING8(_PCLK_, _BAUD_)             ((UART_DIVMANT_SAMPLING8((_PCLK_), (_BAUD_)) << 4)|(UART_DIVFRAQ_SAMPLING8((_PCLK_), (_BAUD_)) & 0x0F))
+__INLINE static uint16_t UART_BRR_SAMPLING8(uint32_t _PCLK_, uint32_t _BAUD_)
+{
+	uint16_t Div = (_PCLK_ + _BAUD_/2)/_BAUD_;	//result in 3 bit fraction, 15 bit Mantissa
+	//When OVER8=1, the DIV_Fraction3 bit is not considered and must be kept cleared.
+	uint16_t DIV_Mantissa = (Div & ~0x7)<<1;
+	uint16_t DIV_Fraction = Div & 0x07	
+	return (DIV_Mantissa | DIV_Fraction);
+}
 
 /**
   * @}

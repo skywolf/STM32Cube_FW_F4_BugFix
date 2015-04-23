@@ -554,10 +554,7 @@ uint32_t               HAL_USART_GetError(USART_HandleTypeDef *husart);
 #define IS_USART_MODE(MODE) ((((MODE) & (uint32_t)0xFFF3) == 0x00) && ((MODE) != (uint32_t)0x00))
 #define IS_USART_BAUDRATE(BAUDRATE) ((BAUDRATE) < 10500001)
 
-#define USART_DIV(_PCLK_, _BAUD_)                  (((_PCLK_)*25)/(2*(_BAUD_)))
-#define USART_DIVMANT(_PCLK_, _BAUD_)              (USART_DIV((_PCLK_), (_BAUD_))/100)
-#define USART_DIVFRAQ(_PCLK_, _BAUD_)              (((USART_DIV((_PCLK_), (_BAUD_)) - (USART_DIVMANT((_PCLK_), (_BAUD_)) * 100)) * 16 + 50) / 100)
-#define USART_BRR(_PCLK_, _BAUD_)                  ((USART_DIVMANT((_PCLK_), (_BAUD_)) << 4)|(USART_DIVFRAQ((_PCLK_), (_BAUD_)) & 0x0F))
+#define USART_BRR(_PCLK_, _BAUD_)                  (((_PCLK_)+(_BAUD_)/2)/_BAUD_)
 /**
   * @}
   */
