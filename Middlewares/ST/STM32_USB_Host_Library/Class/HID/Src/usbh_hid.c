@@ -742,9 +742,14 @@ uint16_t  fifo_read(FIFO_TypeDef * f, void * buf, uint16_t  nbytes)
       } else 
       {
         f->lock = 0;
+		if(i!=0){	
+			while(1);//error trap: data corrupted if got here
+		}
         return i; 
       }
     }
+  }else{//locked
+	  return 0;
   }
   f->lock = 0;
   return nbytes;
@@ -772,6 +777,9 @@ uint16_t  fifo_write(FIFO_TypeDef * f, const void * buf, uint16_t  nbytes)
          ( (f->head + 1 == f->size) && (f->tail == 0)) )
       {
         f->lock = 0;
+		if(i!=0){
+			while(1); //error trap: data corrupted if got here
+		}
         return i;
       } 
       else 
@@ -784,7 +792,10 @@ uint16_t  fifo_write(FIFO_TypeDef * f, const void * buf, uint16_t  nbytes)
         }
       }
     }
+  }else{//locked
+	  return 0;
   }
+  
   f->lock = 0;
   return nbytes;
 }
