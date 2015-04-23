@@ -84,8 +84,9 @@ static USBH_StatusTypeDef USBH_HID_MouseDecode(USBH_HandleTypeDef *phost);
   * @{
   */
 HID_MOUSE_Info_TypeDef    mouse_info;
-uint32_t                  mouse_report_data[1];
-
+uint32_t                  mouse_data_in[1];//buffer for receive data from usb and write to fifo
+uint8_t                   mouse_data_out[4];//buffer for read from fifo and decode
+#if 0
 /* Structures defining how to access items in a HID mouse report */
 /* Access button 1 state. */
 static const HID_Report_ItemTypedef prop_b1={
@@ -156,7 +157,7 @@ static const HID_Report_ItemTypedef prop_y={
   0xFFFF,/*max value device can report*/
   1      /*resolution*/
 };
-
+#endif
 
 /**
   * @}
@@ -183,14 +184,15 @@ USBH_StatusTypeDef USBH_HID_MouseInit(USBH_HandleTypeDef *phost)
   mouse_info.buttons[1]=0;
   mouse_info.buttons[2]=0;
   
-  mouse_report_data[0]=0;
+  mouse_data_in[0]=0;
   
-  if(HID_Handle->length > sizeof(mouse_report_data))
+  if(HID_Handle->length > sizeof(mouse_data_in))
   {
-    HID_Handle->length = sizeof(mouse_report_data);
+    HID_Handle->length = sizeof(mouse_data_in);
   }
-  HID_Handle->pData = (uint8_t *)mouse_report_data;
-  fifo_init(&HID_Handle->fifo, phost->device.Data, HID_QUEUE_SIZE * sizeof(mouse_report_data));
+  HID_Handle->pData = (uint8_t *)mouse_data_in;
+  //init the fifo. size must plus 1 to avoid corrupted data package when fifo full
+  fifo_init(&HID_Handle->fifo, phost->device.Data, HID_QUEUE_SIZE * sizeof(mouse_data_in)+1);
 
   return USBH_OK;  
 }
@@ -228,17 +230,24 @@ static USBH_StatusTypeDef USBH_HID_MouseDecode(USBH_HandleTypeDef *phost)
     return USBH_FAIL;
   }
   /*Fill report */
-  if(fifo_read(&HID_Handle->fifo, &mouse_report_data, HID_Handle->length) ==  HID_Handle->length)
+  if(fifo_read(&HID_Handle->fifo, &mouse_data_out, HID_Handle->length) ==  HID_Handle->length)
   {
-    
     /*Decode report */
+#if 0 	  
     mouse_info.x = (int16_t )HID_ReadItem((HID_Report_ItemTypedef *) &prop_x, 0);
     mouse_info.y = (int16_t )HID_ReadItem((HID_Report_ItemTypedef *) &prop_y, 0);
     
     mouse_info.buttons[0]=(uint8_t)HID_ReadItem((HID_Report_ItemTypedef *) &prop_b1, 0);
     mouse_info.buttons[1]=(uint8_t)HID_ReadItem((HID_Report_ItemTypedef *) &prop_b2, 0);
     mouse_info.buttons[2]=(uint8_t)HID_ReadItem((HID_Report_ItemTypedef *) &prop_b3, 0);
-    
+#else //simple decode for common mouse with two key and one scroll
+	mouse_info.buttons[0]=(mouse_data_out[0] & 0x01)>>0;
+    mouse_info.buttons[1]=(mouse_data_out[0] & 0x02)>>1;;
+    mouse_info.buttons[2]=(mouse_data_out[0] & 0x04)>>2;
+	mouse_info.x = (int8_t)mouse_data_out[1];
+	mouse_info.y = (int8_t)mouse_data_out[2];
+	mouse_info.z = (int8_t)mouse_data_out[3];
+#endif
     return USBH_OK;  
   }
   return   USBH_FAIL;
