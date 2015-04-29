@@ -689,7 +689,7 @@ __INLINE static uint16_t UART_BRR_SAMPLING8(uint32_t _PCLK_, uint32_t _BAUD_)
 	uint16_t Div = (_PCLK_ + _BAUD_/2)/_BAUD_;	//result in 3 bit fraction, 15 bit Mantissa
 	//When OVER8=1, the DIV_Fraction3 bit is not considered and must be kept cleared.
 	uint16_t DIV_Mantissa = (Div & ~0x7)<<1;
-	uint16_t DIV_Fraction = Div & 0x07	
+	uint16_t DIV_Fraction = Div & 0x07;
 	return (DIV_Mantissa | DIV_Fraction);
 }
 
