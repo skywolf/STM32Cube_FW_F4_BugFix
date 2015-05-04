@@ -69,7 +69,7 @@
 #define  LE16(addr)             (((uint16_t)(*((uint8_t *)(addr))))\
                                 + (((uint16_t)(*(((uint8_t *)(addr)) + 1))) << 8))
 
-#define  LE16S(addr)              (uint16_t)(LE16((addr)))
+#define  LE16S(addr)              (int16_t)(LE16((addr)))
 
 #define  LE32(addr)              ((((uint32_t)(*(((uint8_t *)(addr)) + 0))) + \
                                               (((uint32_t)(*(((uint8_t *)(addr)) + 1))) << 8) + \
