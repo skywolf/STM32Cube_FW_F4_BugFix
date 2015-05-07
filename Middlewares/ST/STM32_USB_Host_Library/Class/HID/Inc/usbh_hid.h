@@ -129,6 +129,7 @@ typedef enum
   HID_REQ_GET_HID_DESC,
   HID_REQ_SET_IDLE,
   HID_REQ_SET_PROTOCOL,
+  HID_REQ_GET_PROTOCOL,
   HID_REQ_SET_REPORT,
 
 }
@@ -228,6 +229,8 @@ typedef struct _HID_Process
   uint16_t             poll; 
   uint16_t             timer;
   uint8_t              DataReady;
+  uint8_t			   ReportId;
+  uint8_t			   ReportBytes;
   HID_DescTypeDef      HID_Desc;  
   USBH_StatusTypeDef  ( * Init)(USBH_HandleTypeDef *phost);
 }
@@ -308,6 +311,7 @@ USBH_StatusTypeDef USBH_HID_SetIdle (USBH_HandleTypeDef *phost,
 
 USBH_StatusTypeDef USBH_HID_SetProtocol (USBH_HandleTypeDef *phost,
                                       uint8_t protocol);
+USBH_StatusTypeDef USBH_HID_GetProtocol(USBH_HandleTypeDef *phost, uint8_t *protocol);
 
 void USBH_HID_EventCallback(USBH_HandleTypeDef *phost);
 

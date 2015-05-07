@@ -217,6 +217,10 @@ USBH_StatusTypeDef USBH_GetDescriptor(USBH_HandleTypeDef *phost,
     {
       phost->Control.setup.b.wIndex.w = 0x0409;
     }
+	else if((value_idx & 0xff00) == USB_DESC_HID_REPORT || (value_idx & 0xff00) == USB_DESC_HID)
+	{
+		phost->Control.setup.b.wIndex.w = phost->device.current_interface;
+	}
     else
     {
       phost->Control.setup.b.wIndex.w = 0;
@@ -642,7 +646,12 @@ static USBH_StatusTypeDef USBH_HandleControl (USBH_HandleTypeDef *phost)
 #if (USBH_USE_OS == 1)
     osMessagePut ( phost->os_event, USBH_CONTROL_EVENT, 0);
 #endif      
-    }    
+	}else if(URB_Status == USBH_URB_NOTREADY){
+		USBH_DbgLog("CTRL_SETUP_WAIT NOTREADY");
+      //phost->Control.state = CTRL_ERROR;		
+	} else {
+		USBH_DbgLog("CTRL_SETUP_WAIT %d", URB_Status);	
+	}
     break;
     
   case CTRL_DATA_IN:  
@@ -674,6 +683,7 @@ static USBH_StatusTypeDef USBH_HandleControl (USBH_HandleTypeDef *phost)
     { 
       /* In stall case, return to previous machine state*/
       status = USBH_NOT_SUPPORTED;
+	 // phost->Control.state = CTRL_STALLED; ///<<<<< MY MODIFICATION
 #if (USBH_USE_OS == 1)
     osMessagePut ( phost->os_event, USBH_CONTROL_EVENT, 0);
 #endif      
@@ -685,7 +695,9 @@ static USBH_StatusTypeDef USBH_HandleControl (USBH_HandleTypeDef *phost)
 #if (USBH_USE_OS == 1)
     osMessagePut ( phost->os_event, USBH_CONTROL_EVENT, 0);
 #endif      
-    }
+	}else{
+		//USBH_DbgLog("CTRL_DATA_IN_WAIT %d",URB_Status);
+	}
     break;
     
   case CTRL_DATA_OUT:
@@ -739,7 +751,9 @@ static USBH_StatusTypeDef USBH_HandleControl (USBH_HandleTypeDef *phost)
 #if (USBH_USE_OS == 1)
     osMessagePut ( phost->os_event, USBH_CONTROL_EVENT, 0);
 #endif      
-    } 
+	}else{
+		//USBH_DbgLog("CTRL_DATA_OUT_WAIT %d", URB_Status);
+	}
     break;
     
     
@@ -782,7 +796,9 @@ static USBH_StatusTypeDef USBH_HandleControl (USBH_HandleTypeDef *phost)
 #if (USBH_USE_OS == 1)
     osMessagePut ( phost->os_event, USBH_CONTROL_EVENT, 0);
 #endif      
-    }
+	}else{
+		//USBH_DbgLog("CTRL_STATUS_IN_WAIT %d",URB_Status);
+	}
     break;
     
   case CTRL_STATUS_OUT:
@@ -822,7 +838,9 @@ static USBH_StatusTypeDef USBH_HandleControl (USBH_HandleTypeDef *phost)
 #if (USBH_USE_OS == 1)
     osMessagePut ( phost->os_event, USBH_CONTROL_EVENT, 0);
 #endif      
-    }
+	}else{
+		//USBH_DbgLog("CTRL_STATUS_OUT_WAIT %d",URB_Status);
+	}
     break;
     
   case CTRL_ERROR:
@@ -853,6 +871,7 @@ static USBH_StatusTypeDef USBH_HandleControl (USBH_HandleTypeDef *phost)
     break;
     
   default:
+	  USBH_DbgLog("USBH_HandleControl default");
     break;
   }
   return status;

@@ -84,8 +84,8 @@ static USBH_StatusTypeDef USBH_HID_MouseDecode(USBH_HandleTypeDef *phost);
   * @{
   */
 HID_MOUSE_Info_TypeDef    mouse_info;
-uint32_t                  mouse_data_in[1];//buffer for receive data from usb and write to fifo
-uint8_t                   mouse_data_out[4];//buffer for read from fifo and decode
+uint32_t                  mouse_data_in[2];//buffer for receive data from usb and write to fifo
+uint8_t                   mouse_data_out[8];//buffer for read from fifo and decode
 #if 0
 /* Structures defining how to access items in a HID mouse report */
 /* Access button 1 state. */
@@ -241,12 +241,40 @@ static USBH_StatusTypeDef USBH_HID_MouseDecode(USBH_HandleTypeDef *phost)
     mouse_info.buttons[1]=(uint8_t)HID_ReadItem((HID_Report_ItemTypedef *) &prop_b2, 0);
     mouse_info.buttons[2]=(uint8_t)HID_ReadItem((HID_Report_ItemTypedef *) &prop_b3, 0);
 #else //simple decode for common mouse with two key and one scroll
-	mouse_info.buttons[0]=(mouse_data_out[0] & 0x01)>>0;
-    mouse_info.buttons[1]=(mouse_data_out[0] & 0x02)>>1;;
-    mouse_info.buttons[2]=(mouse_data_out[0] & 0x04)>>2;
-	mouse_info.x = (int8_t)mouse_data_out[1];
-	mouse_info.y = (int8_t)mouse_data_out[2];
-	mouse_info.z = (int8_t)mouse_data_out[3];
+	if(HID_Handle->ReportId==0){//tested on several wired mouse
+		mouse_info.buttons[0]=(mouse_data_out[0] & 0x01)>>0;
+		mouse_info.buttons[1]=(mouse_data_out[0] & 0x02)>>1;;
+		mouse_info.buttons[2]=(mouse_data_out[0] & 0x04)>>2;
+		mouse_info.x = (int8_t)mouse_data_out[1];
+		mouse_info.y = (int8_t)mouse_data_out[2];
+		mouse_info.z = (int8_t)mouse_data_out[3];
+	}else {
+		if(mouse_data_out[0]!=HID_Handle->ReportId) return USBH_FAIL;
+		if(HID_Handle->ReportBytes == 6){//tested on a wireless mouse Rapoo 1800
+			mouse_info.buttons[0]=(mouse_data_out[1] & 0x01)>>0;
+			mouse_info.buttons[1]=(mouse_data_out[1] & 0x02)>>1;;
+			mouse_info.buttons[2]=(mouse_data_out[1] & 0x04)>>2;
+			mouse_info.x = (int8_t)mouse_data_out[2];
+			mouse_info.y = (int8_t)mouse_data_out[3];
+			mouse_info.z = (int8_t)mouse_data_out[4];			
+		}else if(HID_Handle->ReportBytes == 8){//tested on a wireless mouse Logitech M165
+			uint16_t tmp;
+			mouse_info.buttons[0]=(mouse_data_out[1] & 0x01)>>0;
+			mouse_info.buttons[1]=(mouse_data_out[1] & 0x02)>>1;;
+			mouse_info.buttons[2]=(mouse_data_out[1] & 0x04)>>2;			
+			tmp = (mouse_data_out[4] & 0x0F)<<8 | mouse_data_out[3];
+			if(tmp & 0x0800){//negtive
+				tmp |= 0xF000;
+			}
+			mouse_info.x = (int16_t)tmp;
+			tmp = mouse_data_out[4]>>4 |  mouse_data_out[5]<<4;
+			if(tmp & 0x0800){//negtive
+				tmp |= 0xF000;
+			}
+			mouse_info.y = (int16_t)tmp;
+			mouse_info.z = (int8_t)mouse_data_out[6];
+		}
+	}
 #endif
     return USBH_OK;  
   }
